@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Планировщик дел · RED planner</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Roboto, sans-serif;
+      }
+
+      body {
+        background: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .app {
+        display: flex;
+        width: 1100px;
+        max-width: 96vw;
+        height: 85vh;
+        background: white;
+        border-radius: 32px;
+        box-shadow: 0 20px 40px rgba(180, 60, 60, 0.15);
+        overflow: hidden;
+      }
+
+      /* Боковое меню */
+      .sidebar {
+        width: 240px;
+        background: #fff3f3;
+        border-right: 2px solid #ffc9c9;
+        display: flex;
+        flex-direction: column;
+        padding: 28px 0 20px 0;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: 800;
+        color: #b81b1b;
+        padding: 0 20px 25px 20px;
+        border-bottom: 2px solid #ffa7a7;
+        letter-spacing: -0.5px;
+      }
+
+      .nav {
+        list-style: none;
+        margin: 30px 0 0 0;
+        flex: 1;
+      }
+
+      .nav-item {
+        padding: 14px 20px;
+        margin: 5px 12px;
+        border-radius: 18px;
+        font-weight: 600;
+        color: #a13d3d;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .nav-item i {
+        font-style: normal;
+        width: 26px;
+        font-size: 18px;
+      }
+
+      .nav-item:hover {
+        background: #ffdbdb;
+        transform: translateX(3px);
+      }
+
+      .nav-item.active {
+        background: #c72c2c;
+        color: white;
+        box-shadow: 0 5px 10px rgba(199, 44, 44, 0.3);
+      }
+
+      .user-info {
+        padding: 18px 20px 0;
+        border-top: 2px solid #ffc9c9;
+        color: #b15353;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Основной контент */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        overflow-y: auto;
+        padding: 25px 30px;
+      }
+
+      /* Заголовок страницы */
+      .page-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #b81b1b;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Анимация появления */
+      .page {
+        animation: slideUp 0.25s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ---------- Задачи ---------- */
+      .add-task {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 30px;
+      }
+
+      .task-input {
+        flex: 1;
+        padding: 14px 20px;
+        border: 2px solid #ffbaba;
+        border-radius: 50px;
+        font-size: 16px;
+        outline: none;
+        transition: border 0.2s;
+      }
+
+      .task-input:focus {
+        border-color: #c72c2c;
+      }
+
+      .btn-primary {
+        background: #c72c2c;
+        color: white;
+        border: none;
+        padding: 0 32px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        border-bottom: 4px solid #8f1f1f;
+        transition: 0.1s;
+      }
+
+      .btn-primary:hover {
+        background: #d43c3c;
+        transform: scale(1.02);
+      }
+
+      .btn-primary:active {
+        transform: translateY(2px);
+        border-bottom-width: 2px;
+      }
+
+      .task-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .task-item {
+        background: #fff6f6;
+        border-radius: 40px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid #ffc9c9;
+        transition: 0.1s;
+      }
+
+      .task-item:hover {
+        background: #ffe4e4;
+      }
+
+      .task-check {
+        width: 24px;
+        height: 24px;
+        accent-color: #c72c2c;
+        cursor: pointer;
+      }
+
+      .task-text {
+        flex: 1;
+        font-size: 18px;
+        color: #4d2c2c;
+        word-break: break-word;
+      }
+
+      .task-text.completed {
+        text-decoration: line-through;
+        color: #b08a8a;
+      }
+
+      .delete-task {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #b81b1b;
+        cursor: pointer;
+        padding: 0 10px;
+        transition: 0.1s;
+      }
+
+      .delete-task:hover {
+        transform: scale(1.2);
+        color: #ff0000;
+      }
+
+      /* ---------- Pomodoro ---------- */
+      .pomodoro-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+      }
+
+      .timer {
+        font-size: 120px;
+        font-weight: 800;
+        color: #b81b1b;
+        text-shadow: 3px 3px 0 #ffc9c9;
+        line-height: 1;
+        margin-bottom: 30px;
+      }
+
+      .timer-controls {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .timer-btn {
+        background: white;
+        border: 3px solid #c72c2c;
+        color: #c72c2c;
+        font-size: 22px;
+        font-weight: 700;
+        padding: 12px 40px;
+        border-radius: 60px;
+        cursor: pointer;
+        transition: 0.15s;
+        box-shadow: 0 5px 0 #ffaaaa;
+      }
+
+      .timer-btn:hover {
+        background: #c72c2c;
+        color: white;
+      }
+
+      .round-info {
+        margin-top: 30px;
+        color: #a76666;
+        font-size: 18px;
+      }
+
+      /* ---------- Временные блоки ---------- */
+      .block-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .time-block {
+        background: #fff6f6;
+        border-left: 8px solid #c72c2c;
+        border-radius: 24px;
+        padding: 18px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 18px;
+        color: #491f1f;
+        font-weight: 500;
+      }
+
+      .block-time {
+        background: #ffd9d9;
+        padding: 6px 16px;
+        border-radius: 40px;
+        color: #b81b1b;
+        font-weight: 600;
+      }
+
+      .add-block-btn {
+        background: none;
+        border: 2px dashed #c72c2c;
+        color: #c72c2c;
+        padding: 16px;
+        border-radius: 40px;
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 20px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .add-block-btn:hover {
+        background: #c72c2c;
+        color: white;
+        border-style: solid;
+      }
+
+      /* ---------- Настройки ---------- */
+      .settings-group {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        max-width: 400px;
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-size: 18px;
+        color: #491f1f;
+      }
+
+      .setting-row input[type='checkbox'] {
+        width: 22px;
+        height: 22px;
+        accent-color: #c72c2c;
+      }
+
+      .setting-row input[type='number'] {
+        border: 2px solid #ffb8b8;
+        border-radius: 30px;
+        padding: 8px 16px;
+        width: 100px;
+        font-size: 16px;
+        outline: none;
+      }
+      .setting-row input[type='number']:focus {
+        border-color: #c72c2c;
+      }
+
+      .save-settings {
+        background: #c72c2c;
+        color: white;
+        border: none;
+        padding: 16px 30px;
+        border-radius: 50px;
+        font-size: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 4px solid #8f1f1f;
+        transition: 0.1s;
+        align-self: flex-start;
+        margin-top: 20px;
+      }
+
+      .save-settings:hover {
+        background: #d43c3c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Левое меню -->
+      <aside class="sidebar">
+        <div class="logo">RED planner</div>
+        <ul class="nav">
+          <li class="nav-item active" data-page="tasks"><i>📋</i> Задачи</li>
+          <li class="nav-item" data-page="pomodoro"><i>🍅</i> Pomodoro</li>
+          <li class="nav-item" data-page="timeblocks">
+            <i>⏳</i> Временные блоки
+          </li>
+          <li class="nav-item" data-page="settings"><i>⚙️</i> Настройки</li>
+        </ul>
+        <div class="user-info"><span>👤</span> test@test.ru</div>
+      </aside>
+
+      <!-- Основная область -->
+      <main class="main" id="mainContent">
+        <!-- Сюда будет подставляться активная страница -->
+      </main>
+    </div>
+
+    <script>
+      ;(function () {
+        // ------ Данные задач (хранятся в памяти) ------
+        let tasks = [
+          {
+            id: Date.now() + 1,
+            text: 'Сделать курсовую работу',
+            completed: false,
+          },
+          { id: Date.now() + 2, text: 'Купить продукты', completed: true },
+          { id: Date.now() + 3, text: 'Позвонить родителям', completed: false },
+        ]
+
+        // ------ Настройки Pomodoro ------
+        let pomodoroLength = 25 // минут
+        let notificationsEnabled = true
+
+        // ------ Состояние таймера ------
+        let timerInterval = null
+        let timerMinutes = pomodoroLength
+        let timerSeconds = 0
+        let timerRunning = false
+
+        // ------ Элементы ------
+        const mainEl = document.getElementById('mainContent')
+        const navItems = document.querySelectorAll('.nav-item')
+
+        // ------ Функции рендеринга страниц ------
+        function renderTasksPage() {
+          const completedCount = tasks.filter((t) => t.completed).length
+          const totalCount = tasks.length
+          const progress = totalCount
+            ? Math.round((completedCount / totalCount) * 100)
+            : 0
+
+          let html = `
+                    <div class="page">
+                        <h2 class="page-title">📋 Задачи</h2>
+                        <div class="add-task">
+                            <input type="text" class="task-input" id="newTaskInput" placeholder="Новая задача...">
+                            <button class="btn-primary" id="addTaskBtn">Добавить</button>
+                        </div>
+                        <div class="task-list" id="taskListContainer">
+                `
+
+          tasks.forEach((task) => {
+            html += `
+                        <div class="task-item" data-task-id="${task.id}">
+                            <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''}>
+                            <span class="task-text ${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</span>
+                            <button class="delete-task" title="Удалить">✕</button>
+                        </div>
+                    `
+          })
+
+          html += `
+                        </div>
+                        <div style="margin-top: 20px; color: #b15353; font-weight: 500;">
+                            Выполнено: ${completedCount} из ${totalCount} (${progress}%)
+                        </div>
+                    </div>
+                `
+          mainEl.innerHTML = html
+
+          // обработчики задач
+          document
+            .getElementById('addTaskBtn')
+            .addEventListener('click', addTask)
+          document
+            .getElementById('newTaskInput')
+            .addEventListener('keypress', (e) => {
+              if (e.key === 'Enter') addTask()
+            })
+
+          // чекбоксы и удаление
+          document.querySelectorAll('.task-check').forEach((chk, index) => {
+            chk.addEventListener('change', (e) => {
+              const taskId = Number(
+                e.target.closest('.task-item').dataset.taskId,
+              )
+              const task = tasks.find((t) => t.id === taskId)
+              if (task) {
+                task.completed = e.target.checked
+                renderTasksPage() // обновляем отображение
+              }
+            })
+          })
+
+          document.querySelectorAll('.delete-task').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              const taskId = Number(
+                e.target.closest('.task-item').dataset.taskId,
+              )
+              tasks = tasks.filter((t) => t.id !== taskId)
+              renderTasksPage()
+            })
+          })
+        }
+
+        // простая защита от XSS
+        function escapeHtml(unsafe) {
+          return unsafe.replace(/[&<>"']/g, function (m) {
+            if (m === '&') return '&amp;'
+            if (m === '<') return '&lt;'
+            if (m === '>') return '&gt;'
+            if (m === '"') return '&quot;'
+            if (m === "'") return '&#039;'
+            return m
+          })
+        }
+
+        function addTask() {
+          const input = document.getElementById('newTaskInput')
+          const text = input.value.trim()
+          if (text) {
+            tasks.push({ id: Date.now(), text, completed: false })
+            input.value = ''
+            renderTasksPage()
+          }
+        }
+
+        // ------ Pomodoro страница ------
+        function renderPomodoroPage() {
+          mainEl.innerHTML = `
+                    <div class="page pomodoro-box">
+                        <h2 class="page-title" style="align-self: start;">🍅 Pomodoro</h2>
+                        <div class="timer" id="timerDisplay">${formatTime(timerMinutes, timerSeconds)}</div>
+                        <div class="timer-controls">
+                            <button class="timer-btn" id="startPomodoro">Старт</button>
+                            <button class="timer-btn" id="resetPomodoro">Сброс</button>
+                        </div>
+                        <div class="round-info" id="roundInfo">Раунд #1 · длительность ${pomodoroLength} мин</div>
+                    </div>
+                `
+          document
+            .getElementById('startPomodoro')
+            .addEventListener('click', startTimer)
+          document
+            .getElementById('resetPomodoro')
+            .addEventListener('click', resetTimer)
+        }
+
+        function formatTime(m, s) {
+          return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        }
+
+        function startTimer() {
+          if (timerRunning) return
+          timerRunning = true
+          timerInterval = setInterval(() => {
+            if (timerSeconds === 0) {
+              if (timerMinutes === 0) {
+                clearInterval(timerInterval)
+                timerRunning = false
+                alert('🍅 Раунд завершён!')
+                // можно сбросить или увеличить счётчик раундов
+                return
+              } else {
+                timerMinutes--
+                timerSeconds = 59
+              }
+            } else {
+              timerSeconds--
+            }
+            updateTimerDisplay()
+          }, 1000)
+        }
+
+        function resetTimer() {
+          clearInterval(timerInterval)
+          timerRunning = false
+          timerMinutes = pomodoroLength
+          timerSeconds = 0
+          updateTimerDisplay()
+        }
+
+        function updateTimerDisplay() {
+          const disp = document.getElementById('timerDisplay')
+          if (disp) disp.textContent = formatTime(timerMinutes, timerSeconds)
+        }
+
+        // ------ Временные блоки (статичные) ------
+        function renderTimeBlocksPage() {
+          const blocks = [
+            { title: 'Работа над курсовой', time: '10:00–12:30' },
+            { title: 'Обед', time: '12:30–13:30' },
+            { title: 'Встреча с руководителем', time: '14:00–15:00' },
+            { title: 'Pomodoro (фронтенд)', time: '15:30–17:00' },
+          ]
+          let html = `
+                    <div class="page">
+                        <h2 class="page-title">⏳ Временные блоки</h2>
+                        <div class="block-list">
+                `
+          blocks.forEach((b) => {
+            html += `
+                        <div class="time-block">
+                            <span>${b.title}</span>
+                            <span class="block-time">${b.time}</span>
+                        </div>
+                    `
+          })
+          html += `
+                        </div>
+                        <button class="add-block-btn" id="addBlockDemo">➕ Создать блок (демо)</button>
+                    </div>
+                `
+          mainEl.innerHTML = html
+          document
+            .getElementById('addBlockDemo')
+            .addEventListener('click', () => {
+              alert('Добавление нового блока (заглушка)')
+            })
+        }
+
+        // ------ Настройки ------
+        function renderSettingsPage() {
+          mainEl.innerHTML = `
+                    <div class="page">
+                        <h2 class="page-title">⚙️ Настройки</h2>
+                        <div class="settings-group">
+                            <div class="setting-row">
+                                <input type="checkbox" id="notifyCheck" ${notificationsEnabled ? 'checked' : ''}>
+                                <label for="notifyCheck">Уведомления о раундах</label>
+                            </div>
+                            <div class="setting-row">
+                                <label for="pomodoroLength">Длина помидора (мин):</label>
+                                <input type="number" id="pomodoroLength" min="1" max="60" value="${pomodoroLength}">
+                            </div>
+                            <button class="save-settings" id="saveSettingsBtn">Сохранить настройки</button>
+                        </div>
+                    </div>
+                `
+          document
+            .getElementById('saveSettingsBtn')
+            .addEventListener('click', () => {
+              notificationsEnabled =
+                document.getElementById('notifyCheck').checked
+              const newLen = parseInt(
+                document.getElementById('pomodoroLength').value,
+                10,
+              )
+              if (newLen > 0 && newLen <= 60) {
+                pomodoroLength = newLen
+                // сбросим таймер до новой длины, если он не запущен
+                if (!timerRunning) {
+                  timerMinutes = pomodoroLength
+                  timerSeconds = 0
+                }
+              }
+              alert('Настройки сохранены')
+              // если мы на странице помидора, обновим отображение
+              const activePage =
+                document.querySelector('.nav-item.active').dataset.page
+              if (activePage === 'pomodoro') renderPomodoroPage()
+            })
+        }
+
+        // ------ Переключение между страницами ------
+        function setActivePage(pageId) {
+          navItems.forEach((item) => {
+            const dataPage = item.getAttribute('data-page')
+            if (dataPage === pageId) {
+              item.classList.add('active')
+            } else {
+              item.classList.remove('active')
+            }
+          })
+
+          // рендерим соответствующую страницу
+          switch (pageId) {
+            case 'tasks':
+              renderTasksPage()
+              break
+            case 'pomodoro':
+              renderPomodoroPage()
+              break
+            case 'timeblocks':
+              renderTimeBlocksPage()
+              break
+            case 'settings':
+              renderSettingsPage()
+              break
+            default:
+              renderTasksPage()
+          }
+        }
+
+        // обработчики кликов по меню
+        navItems.forEach((item) => {
+          item.addEventListener('click', (e) => {
+            const page = item.getAttribute('data-page')
+            setActivePage(page)
+          })
+        })
+
+        // инициализация — страница задач
+        setActivePage('tasks')
+      })()
+    </script>
+  </body>
+</html>
