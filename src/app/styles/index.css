@@ -1,0 +1,15 @@
+/* Глобальные стили приложения.
+ * Сюда можно будет перенести CSS из index.html,
+ * когда будешь окончательно переносить проект на React.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+}
+
