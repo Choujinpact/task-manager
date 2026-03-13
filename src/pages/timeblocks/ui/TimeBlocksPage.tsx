@@ -1,35 +1,94 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const BLOCKS = [
-  { title: 'Работа над курсовой', time: '10:00–12:30' },
-  { title: 'Обед', time: '12:30–13:30' },
-  { title: 'Встреча с руководителем', time: '14:00–15:00' },
-  { title: 'Pomodoro (фронтенд)', time: '15:30–17:00' },
+type TimeBlock = {
+  id: number;
+  title: string;
+  start: string; // HH:MM
+  end: string; // HH:MM
+};
+
+const INITIAL_BLOCKS: TimeBlock[] = [
+  { id: 1, title: 'Работа над курсовой', start: '10:00', end: '12:30' },
+  { id: 2, title: 'Обед', start: '12:30', end: '13:30' },
+  { id: 3, title: 'Встреча с руководителем', start: '14:00', end: '15:00' },
+  { id: 4, title: 'Pomodoro (фронтенд)', start: '15:30', end: '17:00' },
 ];
 
 export const TimeBlocksPage: React.FC = () => {
+  const [blocks, setBlocks] = useState<TimeBlock[]>(INITIAL_BLOCKS);
+  const [title, setTitle] = useState('');
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+
+  const handleAddBlock = () => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle || !start || !end) {
+      // eslint-disable-next-line no-alert
+      alert('Заполните название и время начала/конца');
+      return;
+    }
+
+    if (start >= end) {
+      // eslint-disable-next-line no-alert
+      alert('Время начала должно быть меньше времени окончания');
+      return;
+    }
+
+    const newBlock: TimeBlock = {
+      id: Date.now(),
+      title: trimmedTitle,
+      start,
+      end,
+    };
+
+    setBlocks((prev) => [...prev, newBlock]);
+    setTitle('');
+    setStart('');
+    setEnd('');
+  };
+
   return (
     <div className="page">
       <h2 className="page-title">⏳ Временные блоки</h2>
 
       <div className="block-list">
-        {BLOCKS.map((b) => (
-          <div className="time-block" key={b.title}>
+        {blocks.map((b) => (
+          <div className="time-block" key={b.id}>
             <span>{b.title}</span>
-            <span className="block-time">{b.time}</span>
+            <span className="block-time">
+              {b.start}–{b.end}
+            </span>
           </div>
         ))}
       </div>
 
-      <button
-        className="add-block-btn"
-        onClick={() =>
-          // eslint-disable-next-line no-alert
-          alert('Добавление нового блока (заглушка)')
-        }
-      >
-        ➕ Создать блок (демо)
-      </button>
+      <div className="add-task" style={{ marginTop: 24 }}>
+        <input
+          type="text"
+          className="task-input"
+          placeholder="Название блока"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+
+      <div className="add-task">
+        <input
+          type="time"
+          className="task-input"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+        />
+        <input
+          type="time"
+          className="task-input"
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+        />
+        <button className="btn-primary" onClick={handleAddBlock}>
+          ➕ Добавить блок
+        </button>
+      </div>
     </div>
   );
 };
