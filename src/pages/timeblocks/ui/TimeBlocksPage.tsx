@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   createTimeBlock,
   getTimeBlocks,
@@ -62,7 +62,16 @@ const INITIAL_BLOCKS: TimeBlock[] = [
   },
 ]
 
-export const TimeBlocksPage: React.FC = () => {
+interface TimeBlocksPageProps {
+  notificationsEnabled: boolean
+}
+
+const NOTIFY_BEFORE_MINUTES = 5
+
+export const TimeBlocksPage: React.FC<TimeBlocksPageProps> = ({
+  notificationsEnabled,
+}) => {
+  const notifiedIdsRef = useRef<Set<number>>(new Set())
   const [blocks, setBlocks] = useState<TimeBlock[]>(() => {
     const raw = window.localStorage.getItem(TIMEBLOCKS_STORAGE_KEY)
     if (!raw) return INITIAL_BLOCKS
@@ -109,6 +118,46 @@ export const TimeBlocksPage: React.FC = () => {
     }
     void loadTimeBlocks()
   }, [])
+
+  useEffect(() => {
+    if (!notificationsEnabled) return
+    if (!('Notification' in window)) return
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission()
+    }
+  }, [notificationsEnabled])
+
+  useEffect(() => {
+    if (!notificationsEnabled) return
+
+    const intervalId = window.setInterval(() => {
+      const now = Date.now()
+
+      sortedBlocks.forEach((block) => {
+        if (notifiedIdsRef.current.has(block.id)) return
+
+        const startTs = new Date(block.startAt).getTime()
+        const notifyTs = startTs - NOTIFY_BEFORE_MINUTES * 60 * 1000
+        const isNotificationWindow = now >= notifyTs && now <= startTs
+
+        if (!isNotificationWindow) return
+
+        const bodyText = `Скоро начнется: "${block.title}" в ${toTimeLabel(block.startAt)}`
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('RED planner · Напоминание', {
+            body: bodyText,
+          })
+        } else {
+          // eslint-disable-next-line no-alert
+          alert(bodyText)
+        }
+
+        notifiedIdsRef.current.add(block.id)
+      })
+    }, 30000)
+
+    return () => window.clearInterval(intervalId)
+  }, [notificationsEnabled, sortedBlocks])
 
   const handleAddBlock = () => {
     const trimmedTitle = title.trim()
@@ -168,6 +217,7 @@ export const TimeBlocksPage: React.FC = () => {
 
   const handleDeleteBlock = (id: number) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id))
+    notifiedIdsRef.current.delete(id)
 
     const syncDelete = async () => {
       try {
@@ -185,6 +235,7 @@ export const TimeBlocksPage: React.FC = () => {
     const confirmed = window.confirm('Удалить все временные блоки?')
     if (!confirmed) return
     setBlocks([])
+    notifiedIdsRef.current.clear()
   }
 
   return (

@@ -84,7 +84,9 @@ export const App: React.FC = () => {
           notificationsEnabled={notificationsEnabled}
         />
       )}
-      {page === 'timeblocks' && <TimeBlocksPage />}
+      {page === 'timeblocks' && (
+        <TimeBlocksPage notificationsEnabled={notificationsEnabled} />
+      )}
       {page === 'settings' && (
         <SettingsPage
           notificationsEnabled={notificationsEnabled}
