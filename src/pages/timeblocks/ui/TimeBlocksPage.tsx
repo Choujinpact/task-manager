@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import {
+  createTimeBlock,
+  getTimeBlocks,
+  removeTimeBlock,
+} from '../../../shared/api/timeblocksApi'
 
 type TimeBlock = {
   id: number
@@ -86,6 +91,25 @@ export const TimeBlocksPage: React.FC = () => {
     window.localStorage.setItem(TIMEBLOCKS_STORAGE_KEY, JSON.stringify(blocks))
   }, [blocks])
 
+  useEffect(() => {
+    const loadTimeBlocks = async () => {
+      try {
+        const remoteBlocks = await getTimeBlocks()
+        setBlocks(
+          remoteBlocks.map((block) => ({
+            id: block.id,
+            title: block.title,
+            startAt: block.startDateTime,
+            endAt: block.endDateTime,
+          })),
+        )
+      } catch {
+        // keep local data while backend is unavailable
+      }
+    }
+    void loadTimeBlocks()
+  }, [])
+
   const handleAddBlock = () => {
     const trimmedTitle = title.trim()
     if (!trimmedTitle || !start || !end) {
@@ -114,10 +138,45 @@ export const TimeBlocksPage: React.FC = () => {
     setTitle('')
     setStart('')
     setEnd('')
+    setDate(todayIsoDate())
+
+    const syncTimeBlock = async () => {
+      try {
+        const created = await createTimeBlock({
+          title: trimmedTitle,
+          startDateTime: startAt,
+          endDateTime: endAt,
+        })
+        setBlocks((prev) =>
+          prev.map((block) =>
+            block.id === newBlock.id
+              ? {
+                  id: created.id,
+                  title: created.title,
+                  startAt: created.startDateTime,
+                  endAt: created.endDateTime,
+                }
+              : block,
+          ),
+        )
+      } catch {
+        // keep optimistic local block if backend is unavailable
+      }
+    }
+    void syncTimeBlock()
   }
 
   const handleDeleteBlock = (id: number) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id))
+
+    const syncDelete = async () => {
+      try {
+        await removeTimeBlock(id)
+      } catch {
+        // ignore API failure and keep local result
+      }
+    }
+    void syncDelete()
   }
 
   const handleClearAll = () => {

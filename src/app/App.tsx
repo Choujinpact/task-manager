@@ -4,6 +4,7 @@ import { TasksPage } from '../pages/tasks/ui/TasksPage';
 import { PomodoroPage } from '../pages/pomodoro/ui/PomodoroPage';
 import { TimeBlocksPage } from '../pages/timeblocks/ui/TimeBlocksPage';
 import { SettingsPage } from '../pages/settings/ui/SettingsPage';
+import { getSettings, updateSettings } from '../shared/api/settingsApi';
 import '../app/styles/index.css';
 
 export type PageId = 'tasks' | 'pomodoro' | 'timeblocks' | 'settings';
@@ -44,12 +45,34 @@ export const App: React.FC = () => {
     );
   }, [pomodoroLength, notificationsEnabled]);
 
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const remoteSettings = await getSettings();
+        setPomodoroLength(remoteSettings.pomodoroLength);
+        setNotificationsEnabled(remoteSettings.notificationsEnabled);
+      } catch {
+        // keep local settings while backend is unavailable
+      }
+    };
+    void loadSettings();
+  }, []);
+
   const handleSaveSettings = (options: {
     notificationsEnabled: boolean;
     pomodoroLength: number;
   }) => {
     setNotificationsEnabled(options.notificationsEnabled);
     setPomodoroLength(options.pomodoroLength);
+
+    const syncSettings = async () => {
+      try {
+        await updateSettings(options);
+      } catch {
+        // ignore API failure and keep local settings
+      }
+    };
+    void syncSettings();
   };
 
   return (
