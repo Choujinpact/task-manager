@@ -1,86 +1,157 @@
-import React, { useEffect, useState } from 'react';
-import { MainLayout } from '../widgets/layout/ui/MainLayout';
-import { TasksPage } from '../pages/tasks/ui/TasksPage';
-import { PomodoroPage } from '../pages/pomodoro/ui/PomodoroPage';
-import { TimeBlocksPage } from '../pages/timeblocks/ui/TimeBlocksPage';
-import { SettingsPage } from '../pages/settings/ui/SettingsPage';
-import { getSettings, updateSettings } from '../shared/api/settingsApi';
-import '../app/styles/index.css';
+import React, { useEffect, useState } from 'react'
+import { MainLayout } from '../widgets/layout/ui/MainLayout'
+import { TasksPage } from '../pages/tasks/ui/TasksPage'
+import { PomodoroPage } from '../pages/pomodoro/ui/PomodoroPage'
+import { TimeBlocksPage } from '../pages/timeblocks/ui/TimeBlocksPage'
+import { SettingsPage } from '../pages/settings/ui/SettingsPage'
+import { AuthPage } from '../pages/auth/ui/AuthPage'
+import {
+  login,
+  loginByRefreshToken,
+  logout,
+  register,
+  type AuthDto,
+  type AuthUser,
+} from '../shared/api/authApi'
+import { getProfile, updateProfile, type UserProfile } from '../shared/api/userApi'
+import '../app/styles/index.css'
 
-export type PageId = 'tasks' | 'pomodoro' | 'timeblocks' | 'settings';
+export type PageId = 'tasks' | 'pomodoro' | 'timeblocks' | 'settings'
 
-const SETTINGS_STORAGE_KEY = 'red_planner_settings';
+const SETTINGS_STORAGE_KEY = 'red_planner_settings'
 
 export const App: React.FC = () => {
-  const [page, setPage] = useState<PageId>('tasks');
+  const [page, setPage] = useState<PageId>('tasks')
+  const [isSessionLoading, setIsSessionLoading] = useState(true)
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false)
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
 
-  // Глобальные настройки, которые влияют и на Pomodoro, и на страницу настроек
-  const [pomodoroLength, setPomodoroLength] = useState<number>(() => {
-    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) return 25;
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (!raw) return true
     try {
-      const parsed = JSON.parse(raw) as { pomodoroLength?: number };
-      return parsed.pomodoroLength ?? 25;
+      const parsed = JSON.parse(raw) as { notificationsEnabled?: boolean }
+      return parsed.notificationsEnabled ?? true
     } catch {
-      return 25;
+      return true
     }
-  });
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
-    () => {
-      const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (!raw) return true;
-      try {
-        const parsed = JSON.parse(raw) as { notificationsEnabled?: boolean };
-        return parsed.notificationsEnabled ?? true;
-      } catch {
-        return true;
-      }
-    },
-  );
+  })
 
   useEffect(() => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
-      JSON.stringify({ pomodoroLength, notificationsEnabled }),
-    );
-  }, [pomodoroLength, notificationsEnabled]);
+      JSON.stringify({ notificationsEnabled }),
+    )
+  }, [notificationsEnabled])
 
   useEffect(() => {
-    const loadSettings = async () => {
+    const restoreSession = async () => {
+      setIsSessionLoading(true)
       try {
-        const remoteSettings = await getSettings();
-        setPomodoroLength(remoteSettings.pomodoroLength);
-        setNotificationsEnabled(remoteSettings.notificationsEnabled);
+        const authData = await loginByRefreshToken()
+        setAuthUser(authData.user)
+        const currentProfile = await getProfile()
+        setProfile(currentProfile)
       } catch {
-        // keep local settings while backend is unavailable
+        setAuthUser(null)
+        setProfile(null)
+      } finally {
+        setIsSessionLoading(false)
       }
-    };
-    void loadSettings();
-  }, []);
+    }
+    void restoreSession()
+  }, [])
 
-  const handleSaveSettings = (options: {
-    notificationsEnabled: boolean;
-    pomodoroLength: number;
+  const handleAuth = async (
+    method: (payload: AuthDto) => Promise<{ user: AuthUser }>,
+    payload: AuthDto,
+  ) => {
+    setIsAuthSubmitting(true)
+    try {
+      const authData = await method(payload)
+      setAuthUser(authData.user)
+      const currentProfile = await getProfile()
+      setProfile(currentProfile)
+      setPage('tasks')
+    } finally {
+      setIsAuthSubmitting(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      setAuthUser(null)
+      setProfile(null)
+    }
+  }
+
+  const handleSaveSettings = async (options: {
+    notificationsEnabled: boolean
+    email: string
+    password: string
+    name?: string
+    workInterval?: number
+    breakInterval?: number
+    intervalCount?: number
   }) => {
-    setNotificationsEnabled(options.notificationsEnabled);
-    setPomodoroLength(options.pomodoroLength);
+    await updateProfile({
+      email: options.email,
+      password: options.password,
+      name: options.name,
+      workInterval: options.workInterval,
+      breakInterval: options.breakInterval,
+      intervalCount: options.intervalCount,
+    })
 
-    const syncSettings = async () => {
-      try {
-        await updateSettings(options);
-      } catch {
-        // ignore API failure and keep local settings
-      }
-    };
-    void syncSettings();
-  };
+    // После PUT забираем актуальный профиль в ожидаемом формате
+    const freshProfile = await getProfile()
+    setNotificationsEnabled(options.notificationsEnabled)
+    setProfile(freshProfile)
+    setAuthUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            email: freshProfile.email,
+            name: freshProfile.name ?? undefined,
+          }
+        : prev,
+    )
+  }
+
+  if (isSessionLoading) {
+    return <div className='auth-shell'>Проверка сессии...</div>
+  }
+
+  if (!authUser || !profile) {
+    return (
+      <AuthPage
+        isLoading={isAuthSubmitting}
+        onLogin={(payload) => handleAuth(login, payload)}
+        onRegister={(payload) => handleAuth(register, payload)}
+      />
+    )
+  }
+
+  const pomodoroSettings = profile.pomodoroSettings ?? {
+    workInterval: 25,
+    breakInterval: 5,
+    intervalCount: 4,
+  }
 
   return (
-    <MainLayout currentPage={page} onChangePage={setPage}>
+    <MainLayout
+      currentPage={page}
+      onChangePage={setPage}
+      userEmail={authUser.email}
+      onLogout={() => void handleLogout()}
+    >
       {page === 'tasks' && <TasksPage />}
       {page === 'pomodoro' && (
         <PomodoroPage
-          length={pomodoroLength}
+          length={pomodoroSettings.workInterval}
           notificationsEnabled={notificationsEnabled}
         />
       )}
@@ -90,11 +161,15 @@ export const App: React.FC = () => {
       {page === 'settings' && (
         <SettingsPage
           notificationsEnabled={notificationsEnabled}
-          pomodoroLength={pomodoroLength}
+          email={profile.email}
+          name={profile.name ?? ''}
+          workInterval={pomodoroSettings.workInterval}
+          breakInterval={pomodoroSettings.breakInterval}
+          intervalCount={pomodoroSettings.intervalCount}
           onSave={handleSaveSettings}
         />
       )}
     </MainLayout>
-  );
-};
+  )
+}
 

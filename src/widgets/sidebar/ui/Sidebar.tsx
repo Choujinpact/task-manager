@@ -5,11 +5,15 @@ import { NavItem } from './NavItem'
 interface SidebarProps {
   currentPage: PageId
   onChangePage: (page: PageId) => void
+  userEmail: string
+  onLogout: () => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   currentPage,
   onChangePage,
+  userEmail,
+  onLogout,
 }) => {
   return (
     <aside className='sidebar'>
@@ -45,7 +49,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       </ul>
       <div className='user-info'>
-        <span>👤</span> test@test.ru
+        <span>👤</span> {userEmail}
+        <button className='logout-btn' onClick={onLogout}>
+          Выйти
+        </button>
       </div>
     </aside>
   )

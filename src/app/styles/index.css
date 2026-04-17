@@ -96,7 +96,23 @@ body {
   font-weight: 500;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.logout-btn {
+  margin-left: auto;
+  border: 1px solid #c72c2c;
+  background: transparent;
+  color: #c72c2c;
+  border-radius: 20px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #c72c2c;
+  color: #fff;
 }
 
 .main {
@@ -436,4 +452,48 @@ body {
 
 .save-settings:hover {
   background: #d43c3c;
+}
+
+.setting-column {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-error {
+  color: #c72c2c;
+  font-weight: 600;
+}
+
+.auth-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  width: 460px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 24px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 20px 40px rgba(180, 60, 60, 0.15);
+}
+
+.auth-title {
+  margin-bottom: 10px;
+}
+
+.auth-link {
+  border: none;
+  background: transparent;
+  color: #b81b1b;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
 }

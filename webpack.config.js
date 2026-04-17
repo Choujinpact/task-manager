@@ -34,6 +34,13 @@ module.exports = {
       directory: path.join(__dirname, 'public'),
     },
     historyApiFallback: true,
+    proxy: [
+      {
+        context: ['/api'],
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    ],
     port: 3000,
     open: true,
   },

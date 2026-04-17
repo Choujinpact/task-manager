@@ -1,90 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import { formatTime } from '../../../shared/lib/formatTime';
+import React, { useEffect, useMemo, useState } from 'react'
+import { formatTime } from '../../../shared/lib/formatTime'
 
 interface PomodoroPageProps {
-  length: number;
-  notificationsEnabled: boolean;
+  length: number
+  notificationsEnabled: boolean
 }
 
 export const PomodoroPage: React.FC<PomodoroPageProps> = ({
   length,
   notificationsEnabled,
 }) => {
-  const [minutes, setMinutes] = useState<number>(length);
-  const [seconds, setSeconds] = useState<number>(0);
-  const [running, setRunning] = useState<boolean>(false);
+  const [running, setRunning] = useState<boolean>(false)
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(() =>
+    Math.max(0, Math.floor(length) * 60),
+  )
 
   // Сброс при изменении длины, если таймер не идёт
   useEffect(() => {
     if (!running) {
-      setMinutes(length);
-      setSeconds(0);
+      setRemainingSeconds(Math.max(0, Math.floor(length) * 60))
     }
-  }, [length, running]);
+  }, [length, running])
+
+  const { minutes, seconds } = useMemo(() => {
+    const safe = Math.max(0, Math.floor(remainingSeconds))
+    return {
+      minutes: Math.floor(safe / 60),
+      seconds: safe % 60,
+    }
+  }, [remainingSeconds])
 
   useEffect(() => {
-    if (!running) return;
+    if (!running) return
+    if (remainingSeconds <= 0) {
+      setRunning(false)
+      return
+    }
 
     const id = window.setInterval(() => {
-      setSeconds((prevSeconds) => {
-        if (prevSeconds === 0) {
-          // секунды на нуле — проверяем минуты
-          setMinutes((prevMinutes) => {
-            if (prevMinutes === 0) {
-              // таймер завершён
-              window.clearInterval(id);
-              setRunning(false);
-              if (notificationsEnabled) {
-                // eslint-disable-next-line no-alert
-                alert('🍅 Раунд завершён!');
-              }
-              return 0;
-            }
-            return prevMinutes - 1;
-          });
-          return 59;
+      setRemainingSeconds((prev) => {
+        const next = Math.max(0, prev - 1)
+        if (next === 0) {
+          window.clearInterval(id)
+          setRunning(false)
+          if (notificationsEnabled) {
+            // eslint-disable-next-line no-alert
+            alert('🍅 Раунд завершён!')
+          }
         }
-        return prevSeconds - 1;
-      });
-    }, 1000);
+        return next
+      })
+    }, 1000)
 
-    return () => window.clearInterval(id);
-  }, [running, notificationsEnabled]);
+    return () => window.clearInterval(id)
+  }, [running, notificationsEnabled, remainingSeconds])
 
   const handleStart = () => {
     if (!running) {
-      setRunning(true);
+      setRunning(true)
     }
-  };
+  }
 
   const handleReset = () => {
-    setRunning(false);
-    setMinutes(length);
-    setSeconds(0);
-  };
+    setRunning(false)
+    setRemainingSeconds(Math.max(0, Math.floor(length) * 60))
+  }
 
   return (
-    <div className="page pomodoro-box">
-      <h2 className="page-title" style={{ alignSelf: 'start' }}>
+    <div className='page pomodoro-box'>
+      <h2 className='page-title' style={{ alignSelf: 'start' }}>
         🍅 Pomodoro
       </h2>
-      <div className="timer">{formatTime(minutes, seconds)}</div>
-      <div className="timer-controls">
+      <div className='timer'>{formatTime(minutes, seconds)}</div>
+      <div className='timer-controls'>
         <button
-          className="timer-btn"
+          className='timer-btn'
           onClick={handleStart}
           disabled={running}
         >
           Старт
         </button>
-        <button className="timer-btn" onClick={handleReset}>
+        <button className='timer-btn' onClick={handleReset}>
           Сброс
         </button>
       </div>
-      <div className="round-info">
+      <div className='round-info'>
         Раунд #1 · длительность {length} мин
       </div>
     </div>
-  );
-};
+  )
+}
 

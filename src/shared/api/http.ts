@@ -1,19 +1,55 @@
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = '/api'
+
+let accessToken: string | null = null
+
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
+export const setAccessToken = (token: string | null) => {
+  accessToken = token
+}
+
+export const getAccessToken = () => accessToken
 
 export const requestJson = async <T>(
   path: string,
-  init?: RequestInit,
+  init?: RequestInit & { withAuth?: boolean },
 ): Promise<T> => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  })
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  if (init?.withAuth && accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+      credentials: 'include',
+    })
+  } catch {
+    throw new Error(
+      'Не удалось подключиться к API. Проверь, что backend запущен на http://localhost:3001',
+    )
+  }
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`)
+    const errorText = await response.text()
+    throw new ApiError(
+      response.status,
+      errorText || `API request failed: ${response.status}`,
+    )
   }
 
   if (response.status === 204) {
