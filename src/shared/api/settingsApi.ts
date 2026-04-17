@@ -1,20 +1,20 @@
 import { requestJson } from './http'
 
 export type PlannerSettings = {
-  notificationsEnabled: boolean
-  pomodoroLength: number
+	notificationsEnabled: boolean
+	pomodoroLength: number
 }
 
 export const getSettings = async (): Promise<PlannerSettings> => {
-  return requestJson<PlannerSettings>('/settings')
+	return requestJson<PlannerSettings>('/user/settings', { withAuth: true })
 }
 
 export const updateSettings = async (
-  payload: PlannerSettings,
+	payload: PlannerSettings,
 ): Promise<PlannerSettings> => {
-  return requestJson<PlannerSettings>('/settings', {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  })
+	return requestJson<PlannerSettings>('/user/settings', {
+		method: 'PATCH',
+		body: JSON.stringify(payload),
+		withAuth: true,
+	})
 }
-
