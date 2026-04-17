@@ -5,16 +5,29 @@ export type PlannerSettings = {
   pomodoroLength: number
 }
 
+type ProfileResponse = {
+  user?: {
+    workInterval?: number
+  }
+}
+
 export const getSettings = async (): Promise<PlannerSettings> => {
-  return requestJson<PlannerSettings>('/settings')
+  const profile = await requestJson<ProfileResponse>('/user/profile')
+  return {
+    notificationsEnabled: true,
+    pomodoroLength: profile.user?.workInterval ?? 25,
+  }
 }
 
 export const updateSettings = async (
   payload: PlannerSettings,
 ): Promise<PlannerSettings> => {
-  return requestJson<PlannerSettings>('/settings', {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
+  await requestJson('/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify({
+      workInterval: payload.pomodoroLength,
+    }),
   })
+  return payload
 }
 

@@ -6,7 +6,7 @@ import {
 } from '../../../shared/api/timeblocksApi'
 
 type TimeBlock = {
-  id: number
+  id: string | number
   title: string
   startAt: string // ISO
   endAt: string // ISO
@@ -71,7 +71,7 @@ const NOTIFY_BEFORE_MINUTES = 5
 export const TimeBlocksPage: React.FC<TimeBlocksPageProps> = ({
   notificationsEnabled,
 }) => {
-  const notifiedIdsRef = useRef<Set<number>>(new Set())
+  const notifiedIdsRef = useRef<Set<string | number>>(new Set())
   const [blocks, setBlocks] = useState<TimeBlock[]>(() => {
     const raw = window.localStorage.getItem(TIMEBLOCKS_STORAGE_KEY)
     if (!raw) return INITIAL_BLOCKS
@@ -215,7 +215,7 @@ export const TimeBlocksPage: React.FC<TimeBlocksPageProps> = ({
     void syncTimeBlock()
   }
 
-  const handleDeleteBlock = (id: number) => {
+  const handleDeleteBlock = (id: string | number) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id))
     notifiedIdsRef.current.delete(id)
 

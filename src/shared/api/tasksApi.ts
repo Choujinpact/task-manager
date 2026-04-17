@@ -2,23 +2,22 @@ import type { Task, TaskColor, TaskPriority } from '../../entities/task/model/ty
 import { requestJson } from './http'
 
 type TaskDto = {
-  id: number
-  text: string
-  completed: boolean
+  id: string
+  name: string
+  isCompleted: boolean
   priority?: TaskPriority
-  color?: TaskColor
 }
 
 const normalizeTask = (task: TaskDto): Task => ({
   id: task.id,
-  text: task.text,
-  completed: task.completed,
+  text: task.name,
+  completed: task.isCompleted,
   priority: task.priority ?? 'medium',
-  color: task.color ?? 'red',
+  color: 'red',
 })
 
 export const getTasks = async (): Promise<Task[]> => {
-  const tasks = await requestJson<TaskDto[]>('/tasks')
+  const tasks = await requestJson<TaskDto[]>('/user/tasks')
   return tasks.map(normalizeTask)
 }
 
@@ -27,26 +26,33 @@ export const createTask = async (payload: {
   priority: TaskPriority
   color: TaskColor
 }): Promise<Task> => {
-  const created = await requestJson<TaskDto>('/tasks', {
+  const created = await requestJson<TaskDto>('/user/tasks', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      name: payload.text,
+      priority: payload.priority,
+    }),
   })
   return normalizeTask(created)
 }
 
 export const updateTask = async (
-  id: number,
+  id: string | number,
   payload: Partial<Pick<Task, 'completed' | 'text' | 'priority' | 'color'>>,
 ): Promise<Task> => {
-  const updated = await requestJson<TaskDto>(`/tasks/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
+  const updated = await requestJson<TaskDto>(`/user/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      name: payload.text,
+      isCompleted: payload.completed,
+      priority: payload.priority,
+    }),
   })
   return normalizeTask(updated)
 }
 
-export const removeTask = async (id: number): Promise<void> => {
-  await requestJson(`/tasks/${id}`, {
+export const removeTask = async (id: string | number): Promise<void> => {
+  await requestJson(`/user/tasks/${id}`, {
     method: 'DELETE',
   })
 }

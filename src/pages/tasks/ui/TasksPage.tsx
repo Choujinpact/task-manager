@@ -46,11 +46,11 @@ export const TasksPage: React.FC = () => {
     setInputValue('')
   }
 
-  const handleToggleTask = (id: number) => {
+  const handleToggleTask = (id: string | number) => {
     toggleTask(id)
   }
 
-  const handleDeleteTask = (id: number) => {
+  const handleDeleteTask = (id: string | number) => {
     deleteTask(id)
   }
 

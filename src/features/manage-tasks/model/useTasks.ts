@@ -83,7 +83,7 @@ export const useTasks = (initial: Task[] = []) => {
     void syncTask()
   }
 
-  const toggleTask = (id: number) => {
+  const toggleTask = (id: string | number) => {
     let nextCompleted = false
     setTasks((prev) =>
       prev.map((t) => {
@@ -105,7 +105,7 @@ export const useTasks = (initial: Task[] = []) => {
     void syncTask()
   }
 
-  const deleteTask = (id: number) => {
+  const deleteTask = (id: string | number) => {
     setTasks((prev) => prev.filter((t) => t.id !== id))
 
     const syncTask = async () => {
